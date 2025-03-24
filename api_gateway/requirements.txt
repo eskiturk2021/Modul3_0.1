@@ -1,0 +1,17 @@
+# api_gateway/requirements.txt
+fastapi
+uvicorn
+sqlalchemy
+aiohttp
+python-multipart
+python-jose
+PyJWT
+passlib
+python-dotenv
+pydantic
+pydantic-settings
+email-validator
+boto3
+psycopg2-binary
+alembic
+requests
