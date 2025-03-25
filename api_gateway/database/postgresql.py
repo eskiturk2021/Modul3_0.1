@@ -53,3 +53,7 @@ class DatabaseService:
             logger.warning(f"Missing required tables: {', '.join(missing_tables)}")
             return False
         return True
+
+# Инициализация сервиса базы данных
+from config import settings
+db_service = DatabaseService(settings.DATABASE_URL)
