@@ -86,12 +86,12 @@ class User(Base):
     """
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(50), unique=True, index=True, nullable=False)
-    email = Column(String(100), unique=True, index=True)
-    password = Column(String(255), nullable=False)  # Хранится хешированный пароль
-    role = Column(String(20), default="user")  # user, admin
-    refresh_token = Column(String(255), nullable=True)
-    last_login = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id = sa.Column(sa.Integer, primary_key=True, index=True)
+    username = sa.Column(sa.String(50), unique=True, index=True, nullable=False)
+    email = sa.Column(sa.String(100), unique=True, index=True)
+    password = sa.Column(sa.String(255), nullable=False)  # Хранится хешированный пароль
+    role = sa.Column(sa.String(20), default="user")  # user, admin
+    refresh_token = sa.Column(sa.String(255), nullable=True)
+    last_login = sa.Column(sa.DateTime, nullable=True)
+    created_at = sa.Column(sa.DateTime, default=datetime.utcnow)
+    updated_at = sa.Column(sa.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
