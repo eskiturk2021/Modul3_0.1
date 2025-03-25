@@ -1,9 +1,12 @@
 # api_gateway/routers/dashboard.py
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Dict, Any
 
-from ..services.dashboard_service import DashboardService
-from ..dependencies import get_dashboard_service
+from api_gateway.services.dashboard_service import DashboardService
+from api_gateway.dependencies import get_dashboard_service
 
 router = APIRouter()
 
