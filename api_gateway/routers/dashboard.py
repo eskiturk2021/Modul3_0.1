@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Dict, Any
 
-from ..services.dashboard_service import DashboardService
+from api_gateway.services.dashboard_service import DashboardService
 from ..dependencies import get_dashboard_service
 
 router = APIRouter()
