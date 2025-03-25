@@ -12,10 +12,10 @@ class Settings(BaseSettings):
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7  # Добавлена новая настройка
 
     # API настройки - используем секретное окружение
-    API_KEY: str = os.getenv("API_KEY")
+    API_KEY: str = os.getenv("API_KEY", "default-api-key")
 
     # Настройки PostgreSQL
-    DATABASE_URL: str = os.getenv("DATABASE_URL")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/postgres")
 
     # Настройки пула соединений с БД
     DB_POOL_SIZE: int = int(os.getenv("DB_POOL_SIZE", "5"))
@@ -23,11 +23,11 @@ class Settings(BaseSettings):
     DB_POOL_TIMEOUT: int = int(os.getenv("DB_POOL_TIMEOUT", "30"))
     DB_POOL_RECYCLE: int = int(os.getenv("DB_POOL_RECYCLE", "1800"))
 
-    # Настройки S3
-    S3_AWS_ACCESS_KEY: str = os.getenv("S3_AWS_ACCESS_KEY")
-    S3_AWS_SECRET_KEY: str = os.getenv("S3_AWS_SECRET_KEY")
+    # Настройки S3 - используем имена переменных из Railway
+    S3_AWS_ACCESS_KEY: str = os.getenv("AWS_ACCESS_KEY_ID", "dummy-access-key")
+    S3_AWS_SECRET_KEY: str = os.getenv("AWS_SECRET_ACCESS_KEY", "dummy-secret-key")
     S3_REGION: str = os.getenv("S3_REGION", "us-east-1")
-    S3_BUCKET: str = os.getenv("S3_BUCKET")
+    S3_BUCKET: str = os.getenv("S3_BUCKET_NAME", "dummy-bucket")
     S3_BASE_PATH: str = os.getenv("S3_BASE_PATH", "user_data/")
 
     # CORS настройки - в продакшене указываем только нужные домены
