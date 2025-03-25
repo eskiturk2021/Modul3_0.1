@@ -3,9 +3,9 @@ import uuid
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
-from ..repositories.customer_repository import CustomerRepository
-from ..repositories.appointment_repository import AppointmentRepository
-from ..repositories.message_repository import MessageRepository
+from repositories.customer_repository import CustomerRepository
+from repositories.appointment_repository import AppointmentRepository
+from repositories.message_repository import MessageRepository
 
 
 class CustomerService:

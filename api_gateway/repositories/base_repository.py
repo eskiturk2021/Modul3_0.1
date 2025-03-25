@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 import logging
 
-from ..database.postgresql import Base
+from database.postgresql import Base
 
 logger = logging.getLogger(__name__)
 

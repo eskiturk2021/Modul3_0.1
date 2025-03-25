@@ -3,8 +3,8 @@ from typing import Dict, List, Any, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
-from .base_repository import BaseRepository
-from ..database.models import UserSubmission
+from base_repository import BaseRepository
+from database.models import UserSubmission
 
 
 class UserSubmissionRepository(BaseRepository[UserSubmission]):

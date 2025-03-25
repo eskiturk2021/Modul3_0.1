@@ -3,9 +3,9 @@ import uuid
 from typing import Dict, List, Any, Optional
 from datetime import datetime, date, time, timedelta
 
-from ..repositories.appointment_repository import AppointmentRepository
-from ..repositories.customer_repository import CustomerRepository
-from ..repositories.available_slot_repository import AvailableSlotRepository
+from repositories.appointment_repository import AppointmentRepository
+from repositories.customer_repository import CustomerRepository
+from repositories.available_slot_repository import AvailableSlotRepository
 
 
 class AppointmentService:

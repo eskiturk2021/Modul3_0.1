@@ -4,8 +4,8 @@ from typing import Dict, List, Optional, Any
 from pydantic import BaseModel
 from datetime import date, datetime, time
 
-from ..services.appointment_service import AppointmentService
-from ..dependencies import get_appointment_service
+from services.appointment_service import AppointmentService
+from dependencies import get_appointment_service
 
 router = APIRouter()
 

@@ -2,9 +2,9 @@
 from typing import Dict, List, Any, Optional
 from datetime import datetime, date, timedelta
 
-from ..repositories.customer_repository import CustomerRepository
-from ..repositories.appointment_repository import AppointmentRepository
-from ..repositories.activity_repository import ActivityRepository
+from repositories.customer_repository import CustomerRepository
+from repositories.appointment_repository import AppointmentRepository
+from repositories.activity_repository import ActivityRepository
 
 
 class DashboardService:

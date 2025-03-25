@@ -3,8 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Path, UploadFile, 
 from typing import Dict, List, Optional, Any
 from pydantic import BaseModel
 
-from ..services.document_service import DocumentService
-from ..dependencies import get_document_service
+from services.document_service import DocumentService
+from dependencies import get_document_service
 
 router = APIRouter()
 

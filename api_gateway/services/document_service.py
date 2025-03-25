@@ -5,8 +5,8 @@ from fastapi import UploadFile
 import os
 from datetime import datetime
 
-from ..storage.s3_client import S3Service
-from ..repositories.user_submission_repository import UserSubmissionRepository
+from storage.s3_client import S3Service
+from repositories.user_submission_repository import UserSubmissionRepository
 
 
 class DocumentService:

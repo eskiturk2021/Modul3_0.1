@@ -3,8 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
-from ..services.activity_service import ActivityService
-from ..dependencies import get_activity_service
+from services.activity_service import ActivityService
+from dependencies import get_activity_service
 
 router = APIRouter()
 

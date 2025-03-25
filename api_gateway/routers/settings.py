@@ -3,8 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Path, Body
 from typing import Dict, List, Optional, Any
 from pydantic import BaseModel
 
-from ..services.settings_service import SettingsService
-from ..dependencies import get_settings_service
+from services.settings_service import SettingsService
+from dependencies import get_settings_service
 
 router = APIRouter()
 

@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from datetime import date, time, datetime, timedelta
 
-from .base_repository import BaseRepository
-from ..database.models import AvailableSlot
+from base_repository import BaseRepository
+from database.models import AvailableSlot
 
 
 class AvailableSlotRepository(BaseRepository[AvailableSlot]):

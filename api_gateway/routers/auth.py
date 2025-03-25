@@ -6,9 +6,9 @@ import jwt
 from typing import Optional, Dict, Any
 from pydantic import BaseModel
 
-from ..config import settings
-from ..services.auth_service import AuthService
-from ..dependencies import get_auth_service
+from config import settings
+from services.auth_service import AuthService
+from dependencies import get_auth_service
 
 router = APIRouter()
 
