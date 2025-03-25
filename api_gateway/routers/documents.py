@@ -136,3 +136,23 @@ async def search_documents(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка при поиске документов: {str(e)}")
+
+@router.get("/documents", response_model=Dict[str, Any])
+async def get_all_documents(
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    document_service: DocumentService = Depends(get_document_service)
+):
+    """
+    Получение списка всех документов
+    """
+    try:
+        documents = document_service.get_all_documents(limit=limit, offset=offset)
+        return {
+            "documents": documents,
+            "total": len(documents),
+            "limit": limit,
+            "offset": offset
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка при получении документов: {str(e)}")

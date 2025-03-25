@@ -5,6 +5,10 @@ from pydantic import BaseModel
 
 from services.customer_service import CustomerService
 from dependencies import get_customer_service
+from fastapi import Response
+import csv
+from io import StringIO
+from datetime import datetime
 
 router = APIRouter()
 
@@ -70,3 +74,53 @@ async def create_customer(
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка при создании клиента: {str(e)}")
+
+
+@router.get("/customers/export", response_class=Response)
+async def export_customers(
+        search: Optional[str] = None,
+        customer_service: CustomerService = Depends(get_customer_service)
+):
+    """
+    Экспорт списка клиентов в формате CSV
+    """
+    try:
+        # Получаем данные клиентов (здесь используем большое значение limit)
+        result = customer_service.get_customers(search, limit=10000, offset=0)
+        customers = result.get("customers", [])
+
+        # Создаем CSV в памяти
+        output = StringIO()
+        writer = csv.writer(output)
+
+        # Пишем заголовки
+        writer.writerow([
+            "ID", "Имя", "Телефон", "Марка автомобиля",
+            "Модель автомобиля", "Год выпуска", "Последний визит"
+        ])
+
+        # Пишем данные
+        for customer in customers:
+            writer.writerow([
+                customer.get("id", ""),
+                customer.get("name", ""),
+                customer.get("phone", ""),
+                customer.get("vehicle_make", ""),
+                customer.get("vehicle_model", ""),
+                customer.get("vehicle_year", ""),
+                customer.get("last_visit", "")
+            ])
+
+        # Подготавливаем ответ
+        response = Response(
+            content=output.getvalue(),
+            media_type="text/csv"
+        )
+
+        # Добавляем заголовок для скачивания файла
+        filename = f"customers_export_{datetime.utcnow().strftime('%Y-%m-%d')}.csv"
+        response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка при экспорте клиентов: {str(e)}")

@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from services.settings_service import SettingsService
 from dependencies import get_settings_service
+from datetime import datetime
 
 router = APIRouter()
 
@@ -177,3 +178,21 @@ async def update_working_hours(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка при обновлении рабочих часов: {str(e)}")
+
+# Добавьте следующий код в файл routers/settings.py или создайте новый файл routers/system.py
+
+@router.get("/system/prompt", response_model=Dict[str, Any])
+async def get_system_prompt(
+    settings_service: SettingsService = Depends(get_settings_service)
+):
+    """
+    Получение системного промпта
+    """
+    try:
+        system_settings = settings_service.get_system_settings()
+        return {
+            "prompt": system_settings.get("system_prompt", ""),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка при получении системного промпта: {str(e)}")

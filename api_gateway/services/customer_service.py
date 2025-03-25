@@ -6,7 +6,8 @@ from datetime import datetime
 from repositories.customer_repository import CustomerRepository
 from repositories.appointment_repository import AppointmentRepository
 from repositories.message_repository import MessageRepository
-
+from services.websocket_service import websocket_service
+import asyncio
 
 class CustomerService:
     def __init__(self, customer_repo: CustomerRepository, appointment_repo: AppointmentRepository,
@@ -108,6 +109,18 @@ class CustomerService:
                 'created_at': datetime.utcnow()
             })
 
+
+            # Отправляем событие WebSocket
+            ws_data = {
+                "id": new_customer.customer_id,
+                "name": new_customer.name,
+                "phone": new_customer.phone
+            }
+
+            # Запускаем корутину в фоновом режиме
+            asyncio.create_task(websocket_service.emit_customer_created(ws_data))
+
+            # Возвращаем результат ПОСЛЕ отправки события
             return {
                 'id': new_customer.customer_id,
                 'status': 'created',

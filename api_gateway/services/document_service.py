@@ -7,7 +7,8 @@ from datetime import datetime
 
 from storage.s3_client import S3Service
 from repositories.user_submission_repository import UserSubmissionRepository
-
+from services.websocket_service import websocket_service
+import asyncio
 
 class DocumentService:
     def __init__(self, s3_service: S3Service, user_submission_repo: UserSubmissionRepository):
@@ -59,6 +60,18 @@ class DocumentService:
                     's3_file_links': s3_file_links
                 })
 
+        document_data = {
+            'filename': file.filename,
+            's3_key': file_path,
+            'submission_id': submission_id,
+            'category': category,
+            'content_type': file.content_type,
+            'size': len(file_content)
+        }
+
+        # Запускаем задачу отправки события
+        asyncio.create_task(websocket_service.emit_document_uploaded(document_data))
+
         return {
             'filename': file.filename,
             's3_key': file_path,
@@ -103,3 +116,43 @@ class DocumentService:
                 'download_url': download_url,
                 'last_modified': file_data['last_modified']
             }
+
+    def get_all_documents(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
+        """Получает список всех документов"""
+        # Так как документы хранятся в S3 и информация о них внутри user_submissions,
+        # нам нужно извлечь эти данные из базы данных
+        documents = []
+
+        with self.user_submission_repo.session_scope() as session:
+            repo = UserSubmissionRepository(session)
+            submissions = repo.get_all(limit=limit, offset=offset)
+
+            # Обрабатываем каждую запись и извлекаем информацию о документах
+            for submission in submissions:
+                if not submission.s3_file_links:
+                    continue
+
+                for category, files in submission.s3_file_links.items():
+                    for file_info in files:
+                        doc = {
+                            'submission_id': submission.submission_id,
+                            'original_name': file_info.get('original_name', ''),
+                            's3_key': file_info.get('s3_key', ''),
+                            'url': file_info.get('url', ''),
+                            'uploaded_at': file_info.get('uploaded_at', ''),
+                            'category': category,
+                            'company_name': submission.company_name,
+                            'email': submission.email,
+                            'phone': submission.phone
+                        }
+
+                        # Генерируем временный URL для доступа
+                        try:
+                            download_url = self.s3_service.get_presigned_url(file_info.get('s3_key', ''))
+                            doc['download_url'] = download_url
+                        except Exception:
+                            doc['download_url'] = None
+
+                        documents.append(doc)
+
+        return documents

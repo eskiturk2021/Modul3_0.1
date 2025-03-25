@@ -6,7 +6,8 @@ from datetime import datetime, date, time, timedelta
 from repositories.appointment_repository import AppointmentRepository
 from repositories.customer_repository import CustomerRepository
 from repositories.available_slot_repository import AvailableSlotRepository
-
+from services.websocket_service import websocket_service
+import asyncio
 
 class AppointmentService:
     def __init__(self, appointment_repo: AppointmentRepository, customer_repo: CustomerRepository,
@@ -141,10 +142,31 @@ class AppointmentService:
                 "total_visits": customer.total_visits + 1
             })
 
+            appointment_data = {
+                "id": appointment_id,
+                "customer": {
+                    "name": customer_name,
+                    "phone": customer_phone
+                },
+                "service": {
+                    "type": appointment_data.get("service_type")
+                },
+                "appointment_date": appointment_date.isoformat() if hasattr(appointment_date, "isoformat") else str(appointment_date),
+
+                "appointment_time": appointment_time.isoformat() if hasattr(appointment_time, "isoformat") else str(appointment_time),
+
+                "status": "pending"
+            }
+
+            # Запускаем корутину в фоновом режиме
+            asyncio.create_task(websocket_service.emit_appointment_created(appointment_data))
+
             return {
                 "id": appointment_id,
                 "status": "created"
             }
+
+
 
     def update_appointment(self, appointment_id: str, appointment_data: Dict[str, Any]) -> bool:
         """Обновляет информацию о записи"""
@@ -201,6 +223,16 @@ class AppointmentService:
                 update_data["appointment_time"] = datetime.strptime(update_data["appointment_time"], "%H:%M").time()
 
             appointment_repo.update(appointment.id, update_data)
+
+            # Отправляем событие WebSocket
+            ws_data = {
+                "id": appointment_id,
+                "status": update_data.get("status", "updated"),
+                "changes": appointment_data
+            }
+
+            # Запускаем корутину в фоновом режиме
+            asyncio.create_task(websocket_service.emit_appointment_updated(ws_data))
 
             return True
 

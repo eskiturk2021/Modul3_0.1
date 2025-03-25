@@ -6,6 +6,7 @@ import time
 import os
 from typing import List
 from contextlib import asynccontextmanager
+from services.websocket_service import websocket_service
 
 # Настройка логирования
 logging.basicConfig(
@@ -112,7 +113,6 @@ app.add_middleware(
     ]
 )
 
-
 # Эндпоинт для тестирования конфигурации (доступен только в режиме отладки)
 @app.get("/test/config")
 async def test_config():
@@ -131,6 +131,7 @@ async def test_config():
         "JWT_SECRET_KEY": "***" if settings.JWT_SECRET_KEY else "Not set"
     }
 
+app.mount("/ws", websocket_service.app)
 
 # Подключаем роутеры
 app.include_router(auth.router, prefix="/api", tags=["auth"])
