@@ -95,3 +95,31 @@ class User(Base):
     last_login = sa.Column(sa.DateTime, nullable=True)
     created_at = sa.Column(sa.DateTime, default=datetime.utcnow)
     updated_at = sa.Column(sa.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# api_gateway/database/models.py (дополнение)
+class Activity(Base):
+    __tablename__ = "activities"
+
+    id = sa.Column(sa.Integer, primary_key=True)
+    customer_id = sa.Column(sa.Integer, sa.ForeignKey("customers.id"), nullable=True)
+    message = sa.Column(sa.Text, nullable=False)
+    type = sa.Column(sa.String(50), nullable=False)
+    created_at = sa.Column(sa.DateTime, default=datetime.utcnow)
+
+    # Отношения
+    customer = sa.orm.relationship("Customer")
+
+
+class Service(Base):
+    __tablename__ = "services"
+
+    id = sa.Column(sa.Integer, primary_key=True)
+    service_id = sa.Column(sa.String(20), unique=True)
+    name = sa.Column(sa.String(100), nullable=False)
+    description = sa.Column(sa.Text)
+    duration = sa.Column(sa.Integer, nullable=False)  # в минутах
+    price = sa.Column(sa.Numeric(10, 2), nullable=False)
+    category = sa.Column(sa.String(50))
+    active = sa.Column(sa.Boolean, default=True)
+    created_at = sa.Column(sa.DateTime, default=datetime.utcnow)
