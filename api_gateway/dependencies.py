@@ -1,17 +1,30 @@
-# api_gateway/dependencies.py
 from fastapi import Depends, Request, HTTPException
 from typing import Generator
 from sqlalchemy.orm import Session
 
-from .database.postgresql import DatabaseService
-from .storage.s3_client import S3Service
-from .repositories.user_submission_repository import UserSubmissionRepository
-from .repositories.customer_repository import CustomerRepository
-from .repositories.appointment_repository import AppointmentRepository
-from .repositories.message_repository import MessageRepository
-from .services.document_service import DocumentService
-from .services.customer_service import CustomerService
-from .config import settings
+from database.postgresql import DatabaseService
+from storage.s3_client import S3Service
+
+# Добавить импорты для репозиториев
+from repositories.user_submission_repository import UserSubmissionRepository
+from repositories.customer_repository import CustomerRepository
+from repositories.appointment_repository import AppointmentRepository
+from repositories.message_repository import MessageRepository
+from repositories.activity_repository import ActivityRepository  # Добавить этот импорт
+from repositories.available_slot_repository import AvailableSlotRepository  # Добавить этот импорт
+from repositories.service_repository import ServiceRepository  # Добавить этот импорт
+from repositories.user_repository import UserRepository  # Добавить этот импорт
+
+# Добавить импорты для сервисов
+from services.document_service import DocumentService
+from services.customer_service import CustomerService
+from services.dashboard_service import DashboardService  # Добавить этот импорт
+from services.activity_service import ActivityService  # Добавить этот импорт
+from services.appointment_service import AppointmentService  # Добавить этот импорт
+from services.settings_service import SettingsService  # Добавить этот импорт
+from services.auth_service import AuthService  # Добавить этот импорт
+
+from config import settings
 
 # Создаем экземпляры сервисов
 db_service = DatabaseService(settings.DATABASE_URL)
@@ -27,6 +40,7 @@ def get_db_session() -> Generator[Session, None, None]:
     with db_service.session_scope() as session:
         yield session
 
+# Репозитории следующими
 def get_user_submission_repo(session: Session = Depends(get_db_session)) -> UserSubmissionRepository:
     return UserSubmissionRepository(session)
 
@@ -39,6 +53,19 @@ def get_appointment_repo(session: Session = Depends(get_db_session)) -> Appointm
 def get_message_repo(session: Session = Depends(get_db_session)) -> MessageRepository:
     return MessageRepository(session)
 
+def get_activity_repo(session: Session = Depends(get_db_session)) -> ActivityRepository:
+    return ActivityRepository(session)
+
+def get_available_slot_repo(session: Session = Depends(get_db_session)) -> AvailableSlotRepository:
+    return AvailableSlotRepository(session)
+
+def get_service_repo(session: Session = Depends(get_db_session)) -> ServiceRepository:
+    return ServiceRepository(session)
+
+def get_user_repo(session: Session = Depends(get_db_session)) -> UserRepository:
+    return UserRepository(session)
+
+# Сервисы последними, так как они зависят от репозиториев
 def get_document_service(
     user_submission_repo: UserSubmissionRepository = Depends(get_user_submission_repo)
 ) -> DocumentService:
@@ -50,8 +77,6 @@ def get_customer_service(
     message_repo: MessageRepository = Depends(get_message_repo)
 ) -> CustomerService:
     return CustomerService(customer_repo, appointment_repo, message_repo)
-
-# api_gateway/dependencies.py (дополнение)
 
 def get_dashboard_service(
     customer_repo: CustomerRepository = Depends(get_customer_repo),
@@ -73,12 +98,6 @@ def get_appointment_service(
 ) -> AppointmentService:
     return AppointmentService(appointment_repo, customer_repo, slot_repo)
 
-def get_available_slot_repo(session: Session = Depends(get_db_session)) -> AvailableSlotRepository:
-    return AvailableSlotRepository(session)
-
-def get_service_repo(session: Session = Depends(get_db_session)) -> ServiceRepository:
-    return ServiceRepository(session)
-
 def get_settings_service(
     service_repo: ServiceRepository = Depends(get_service_repo)
 ) -> SettingsService:
@@ -89,5 +108,4 @@ def get_auth_service(
 ) -> AuthService:
     return AuthService(user_repo)
 
-def get_user_repo(session: Session = Depends(get_db_session)) -> UserRepository:
-    return UserRepository(session)
+
