@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, and_
 from datetime import datetime
 
-from base_repository import BaseRepository
+from repositories.base_repository import BaseRepository
 from database.models import Message
 
 

@@ -3,7 +3,7 @@ from typing import Dict, List, Any, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
-from base_repository import BaseRepository
+from repositories.base_repository import BaseRepository
 from database.models import Customer
 
 
