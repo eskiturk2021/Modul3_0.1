@@ -5,9 +5,13 @@ import logging
 import time
 import os
 from typing import List
+from contextlib import asynccontextmanager
 
 # Настройка логирования
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=getattr(logging, os.getenv("LOG_LEVEL", "INFO")),
+    format=os.getenv("LOG_FORMAT", "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+)
 logger = logging.getLogger(__name__)
 
 # Импорты роутеров
@@ -16,11 +20,31 @@ from routers import settings as settings_router
 from routers import auth
 from config import settings
 from middleware.auth import AuthMiddleware
+from middleware.rate_limit import RateLimitMiddleware  # Добавьте этот middleware для защиты от DDoS
 
 # Импорты для инициализации базы данных
-# Импорты для инициализации базы данных
 from database.postgresql import Base, db_service
-from database.models import *
+from database.models import User, Customer, Appointment, Service, Activity, Document, Conversation, AvailableSlot
+from database.init_data import initialize_default_data
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Обработчик жизненного цикла приложения"""
+    # Код, который выполняется при запуске
+    logger.info("Запуск приложения...")
+    try:
+        # Проверяем и инициализируем данные по умолчанию при первом запуске
+        initialize_default_data(db_service)
+        logger.info("Инициализация данных завершена")
+    except Exception as e:
+        logger.error(f"Ошибка при инициализации данных: {str(e)}")
+
+    yield  # Здесь приложение работает
+
+    # Код, который выполняется при завершении
+    logger.info("Завершение работы приложения...")
+
 
 # Инициализация базы данных (создание таблиц, если они не существуют)
 Base.metadata.create_all(bind=db_service.engine)
@@ -28,7 +52,11 @@ Base.metadata.create_all(bind=db_service.engine)
 app = FastAPI(
     title=settings.APP_NAME,
     description=settings.APP_DESCRIPTION,
-    version=settings.APP_VERSION
+    version=settings.APP_VERSION,
+    lifespan=lifespan,
+    docs_url="/docs" if settings.DEBUG else None,  # Отключение автодокументации в продакшене
+    redoc_url="/redoc" if settings.DEBUG else None,
+    openapi_url="/openapi.json" if settings.DEBUG else None
 )
 
 
@@ -54,22 +82,19 @@ async def log_requests(request: Request, call_next):
         raise
 
 
-# Проверяем формат CORS_ORIGINS и приводим к нужному типу
-allowed_origins: List[str] = settings.CORS_ORIGINS
-if isinstance(allowed_origins, str):
-    # Если это строка с разделителями, преобразуем в список
-    allowed_origins = [origin.strip() for origin in allowed_origins.split(",")]
-elif not isinstance(allowed_origins, list):
-    # Если это не список, используем значения по умолчанию
-    allowed_origins = ["https://modul4-production.up.railway.app", "http://localhost:3000"]
-
 # Настройка CORS с обработанным списком источников
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+# Добавляем middleware для ограничения количества запросов (защита от DDoS)
+app.add_middleware(
+    RateLimitMiddleware,
+    limit_per_minute=settings.RATE_LIMIT_PER_MINUTE
 )
 
 # Добавляем middleware для аутентификации
@@ -88,10 +113,13 @@ app.add_middleware(
 )
 
 
-# Эндпоинт для тестирования конфигурации
+# Эндпоинт для тестирования конфигурации (доступен только в режиме отладки)
 @app.get("/test/config")
 async def test_config():
     """Проверка конфигурации"""
+    if not settings.DEBUG:
+        return {"message": "This endpoint is only available in debug mode"}
+
     return {
         "DATABASE_URL": "***" if settings.DATABASE_URL else "Not set",  # Скрываем URL для безопасности
         "S3_BUCKET": settings.S3_BUCKET,
@@ -99,7 +127,7 @@ async def test_config():
         "API_KEY": "***" if settings.API_KEY else "Not set",
         "PORT": settings.PORT,
         "ENV_PORT": os.getenv("PORT", "Not set"),
-        "CORS_ORIGINS": allowed_origins,
+        "CORS_ORIGINS": settings.CORS_ORIGINS,
         "JWT_SECRET_KEY": "***" if settings.JWT_SECRET_KEY else "Not set"
     }
 
@@ -123,18 +151,25 @@ async def health_check():
             db_status = "connected"
     except Exception as e:
         logger.error(f"Ошибка подключения к базе данных: {str(e)}")
-        db_status = f"error: {str(e)}"
+        db_status = f"error"
 
     try:
         # Проверяем соединение с S3
-        from storage.s3_client import s3_service
+        from storage.s3_client import S3Service
+        s3_service = S3Service(
+            aws_access_key=settings.S3_AWS_ACCESS_KEY,
+            aws_secret_key=settings.S3_AWS_SECRET_KEY,
+            region=settings.S3_REGION,
+            bucket=settings.S3_BUCKET,
+            base_path=settings.S3_BASE_PATH
+        )
         s3_status = "connected"
     except Exception as e:
         logger.error(f"Ошибка подключения к S3: {str(e)}")
-        s3_status = f"error: {str(e)}"
+        s3_status = f"error"
 
     return {
-        "status": "healthy",
+        "status": "healthy" if db_status == "connected" and s3_status == "connected" else "unhealthy",
         "database": db_status,
         "s3": s3_status,
         "timestamp": time.time()
@@ -147,7 +182,6 @@ async def root():
     return {
         "app_name": settings.APP_NAME,
         "version": settings.APP_VERSION,
-        "description": settings.APP_DESCRIPTION,
         "status": "running"
     }
 
@@ -163,34 +197,8 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-# Инициализация данных при первом запуске (если нужно)
-from database.init_data import initialize_default_data
-
-
-@app.on_event("startup")
-async def startup_event():
-    logger.info("Запуск приложения...")
-    try:
-        # Проверяем и инициализируем данные по умолчанию при первом запуске
-        initialize_default_data(db_service)
-        logger.info("Инициализация данных завершена")
-    except Exception as e:
-        logger.error(f"Ошибка при инициализации данных: {str(e)}")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    logger.info("Завершение работы приложения...")
-
-
 if __name__ == "__main__":
     import uvicorn
-
-    # Параметр DEBUG для отображения деталей ошибок (в продакшене должен быть False)
-    settings.DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "t")
-
-    # Более безопасный вывод в логи (скрываем конфиденциальную информацию)
-    logger.info(f"Запуск приложения на порту {settings.PORT}")
 
     # Безопасная обработка порта с значением по умолчанию
     port = int(settings.PORT) if settings.PORT else 8000
@@ -199,5 +207,6 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=port,
-        reload=os.getenv("RELOAD", "False").lower() in ("true", "1", "t")
+        reload=settings.DEBUG,
+        access_log=settings.DEBUG
     )

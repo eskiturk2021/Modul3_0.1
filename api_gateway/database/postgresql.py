@@ -4,11 +4,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 from contextlib import contextmanager
 import logging
-import sys
-import os
-
-# Добавляем путь к корневому каталогу проекта, чтобы импорт config работал
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -17,13 +12,16 @@ Base = declarative_base()
 
 class DatabaseService:
     def __init__(self, connection_string: str):
+        # Оптимизированные настройки для продакшена
         self.engine = sa.create_engine(
             connection_string,
-            pool_pre_ping=True,
-            pool_size=5,
-            max_overflow=10,
-            pool_timeout=30,
-            pool_recycle=1800
+            pool_pre_ping=True,  # Проверяет соединение перед использованием
+            pool_size=settings.DB_POOL_SIZE,
+            max_overflow=settings.DB_MAX_OVERFLOW,
+            pool_timeout=settings.DB_POOL_TIMEOUT,
+            pool_recycle=settings.DB_POOL_RECYCLE,
+            echo=settings.DEBUG,  # SQL запросы логируются только в режиме отладки
+            connect_args={"options": "-c timezone=utc"}  # Устанавливаем UTC для всех соединений
         )
         session_factory = sessionmaker(bind=self.engine)
         self.Session = scoped_session(session_factory)
@@ -46,7 +44,8 @@ class DatabaseService:
         """Проверяет наличие необходимых таблиц в базе данных"""
         insp = sa.inspect(self.engine)
         existing_tables = insp.get_table_names()
-        required_tables = ['user_submissions', 'customers', 'messages', 'appointments', 'available_slots']
+        required_tables = ['user_submissions', 'customers', 'messages', 'appointments', 'available_slots',
+                          'users', 'services', 'documents', 'activities', 'conversations']
 
         missing_tables = [table for table in required_tables if table not in existing_tables]
 
@@ -54,7 +53,3 @@ class DatabaseService:
             logger.warning(f"Missing required tables: {', '.join(missing_tables)}")
             return False
         return True
-
-
-# Создаем глобальный экземпляр для использования в приложении
-db_service = DatabaseService(settings.DATABASE_URL)
