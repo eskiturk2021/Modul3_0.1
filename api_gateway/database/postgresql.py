@@ -4,6 +4,12 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 from contextlib import contextmanager
 import logging
+import sys
+import os
+
+# Добавляем путь к корневому каталогу проекта, чтобы импорт config работал
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from config import settings
 
 logger = logging.getLogger(__name__)
 Base = declarative_base()
@@ -48,3 +54,7 @@ class DatabaseService:
             logger.warning(f"Missing required tables: {', '.join(missing_tables)}")
             return False
         return True
+
+
+# Создаем глобальный экземпляр для использования в приложении
+db_service = DatabaseService(settings.DATABASE_URL)
