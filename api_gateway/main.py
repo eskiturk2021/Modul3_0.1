@@ -18,8 +18,9 @@ from config import settings
 from middleware.auth import AuthMiddleware
 
 # Импорты для инициализации базы данных
+# Импорты для инициализации базы данных
 from database.postgresql import Base, db_service
-from database.models import User, Customer, Appointment, Service, Document, Activity, Conversation, AvailableSlot
+from database.models import *
 
 # Инициализация базы данных (создание таблиц, если они не существуют)
 Base.metadata.create_all(bind=db_service.engine)

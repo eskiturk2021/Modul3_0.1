@@ -38,6 +38,8 @@ class Customer(Base):
     total_visits = sa.Column(sa.Integer, default=0)
     created_at = sa.Column(sa.DateTime, default=datetime.utcnow)
 
+    # Исправлено - отношение внутри класса:
+    documents = sa.orm.relationship("Document", back_populates="customer")
 
 class Message(Base):
     __tablename__ = 'messages'
@@ -123,3 +125,41 @@ class Service(Base):
     category = sa.Column(sa.String(50))
     active = sa.Column(sa.Boolean, default=True)
     created_at = sa.Column(sa.DateTime, default=datetime.utcnow)
+
+# api_gateway/database/models.py (добавление модели Document)
+
+class Document(Base):
+    """
+    Модель документа
+    """
+    __tablename__ = "documents"
+
+    id = sa.Column(sa.Integer, primary_key=True, index=True)
+    customer_id = sa.Column(sa.Integer, sa.ForeignKey("customers.id"), nullable=True)
+    title = sa.Column(sa.String(100), nullable=False)
+    description = sa.Column(sa.Text)
+    file_path = sa.Column(sa.String(255), nullable=False)
+    file_url = sa.Column(sa.String(255))
+    file_type = sa.Column(sa.String(50))
+    file_size = sa.Column(sa.Integer)  # в байтах
+    created_at = sa.Column(sa.DateTime, default=datetime.utcnow)
+    updated_at = sa.Column(sa.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Отношения
+    customer = sa.orm.relationship("Customer", back_populates="documents")
+
+
+class Conversation(Base):
+    """
+    Модель сообщения в диалоге
+    """
+    __tablename__ = "conversations"
+
+    id = sa.Column(sa.Integer, primary_key=True, index=True)
+    customer_id = sa.Column(sa.Integer, sa.ForeignKey("customers.id"), nullable=False)
+    sender = sa.Column(sa.String(50), nullable=False)  # "customer" или "assistant"
+    message = sa.Column(sa.Text, nullable=False)
+    created_at = sa.Column(sa.DateTime, default=datetime.utcnow)
+
+    # Отношения
+    customer = sa.orm.relationship("Customer")
