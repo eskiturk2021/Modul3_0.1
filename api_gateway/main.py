@@ -84,9 +84,12 @@ async def log_requests(request: Request, call_next):
 
 
 # Настройка CORS с обработанным списком источников
+# Подготовка списка разрешенных источников
+cors_origins = ["*"] if settings.CORS_ORIGINS == "*" else settings.CORS_ORIGINS.split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
