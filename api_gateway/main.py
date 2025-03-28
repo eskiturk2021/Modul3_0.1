@@ -102,15 +102,54 @@ app = FastAPI(
 )
 
 
+# Новый middleware для отладки CORS
+@app.middleware("http")
+async def cors_debug_middleware(request: Request, call_next):
+    # Логируем детали входящего запроса
+    method = request.method
+    path = request.url.path
+    origin = request.headers.get("Origin")
+
+    logger.info(f"CORS Debug - Incoming Request: Method={method}, Path={path}, Origin={origin}")
+    logger.info(f"Request Headers: {dict(request.headers)}")
+
+    # Особенно важно для OPTIONS запросов
+    if method == "OPTIONS":
+        logger.info(f"Обнаружен OPTIONS запрос от {origin} к {path}")
+        logger.info(f"Access-Control-Request-Method: {request.headers.get('Access-Control-Request-Method')}")
+        logger.info(f"Access-Control-Request-Headers: {request.headers.get('Access-Control-Request-Headers')}")
+
+    # Обрабатываем запрос
+    response = await call_next(request)
+
+    # Логируем детали ответа
+    cors_origin = response.headers.get("Access-Control-Allow-Origin")
+    cors_methods = response.headers.get("Access-Control-Allow-Methods")
+    cors_headers = response.headers.get("Access-Control-Allow-Headers")
+    cors_credentials = response.headers.get("Access-Control-Allow-Credentials")
+
+    logger.info(f"CORS Debug - Outgoing Response: Status={response.status_code}")
+    logger.info(
+        f"CORS Headers in Response: Origin={cors_origin}, Methods={cors_methods}, Headers={cors_headers}, Credentials={cors_credentials}")
+
+    # Для OPTIONS запросов показываем полные заголовки
+    if method == "OPTIONS":
+        logger.info(f"Полные заголовки ответа на OPTIONS: {dict(response.headers)}")
+
+    return response
+
+
 # Middleware для обработки OPTIONS запросов и добавления CORS заголовков
 @app.middleware("http")
 async def handle_options(request: Request, call_next):
     if request.method == "OPTIONS":
+        logger.info(f"OPTIONS handler middleware called for path: {request.url.path}")
         response = Response()
         response.headers["Access-Control-Allow-Origin"] = "https://modul4-production.up.railway.app"
         response.headers["Access-Control-Allow-Credentials"] = "true"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
         response.headers["Access-Control-Allow-Headers"] = "X-API-Key, Authorization, Content-Type, Accept, Origin"
+        logger.info(f"Returning OPTIONS response with headers: {dict(response.headers)}")
         return response
 
     response = await call_next(request)
@@ -198,15 +237,16 @@ except Exception as e:
 # Настройка CORS с обработанным списком источников
 # Подготовка списка разрешенных источников
 # Исправьте этот код в main.py
-
 cors_origins = ["https://modul4-production.up.railway.app"]
+logger.info(f"Настройка CORS. Разрешенные источники: {cors_origins}")
+
 try:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cors_origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-        allow_headers=["*"],  # Разрешить все заголовки
+        allow_headers=["X-API-Key", "Authorization", "Content-Type", "Accept"],
     )
     logger.info("CORS middleware настроен успешно")
 except Exception as e:
