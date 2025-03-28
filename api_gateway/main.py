@@ -161,7 +161,7 @@ except Exception as e:
 
 # Настройка CORS с обработанным списком источников
 # Подготовка списка разрешенных источников
-cors_origins = ["*"] if settings.CORS_ORIGINS == "*" else settings.CORS_ORIGINS.split(",")
+cors_origins = ["*"] if settings.CORS_ORIGINS == "*" else [origin.strip() for origin in settings.CORS_ORIGINS.split(",")]
 logger.info(f"Настройка CORS. Разрешенные источники: {cors_origins}")
 
 try:

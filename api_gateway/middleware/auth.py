@@ -38,6 +38,22 @@ async def verify_api_key(api_key: str = Depends(API_KEY_HEADER)):
     return api_key
 
 
+@app.middleware("http")
+async def log_cors_details(request: Request, call_next):
+    if request.method == "OPTIONS":
+        logger.info(f"CORS Preflight запрос от {request.headers.get('Origin')} к {request.url.path}")
+        logger.info(f"CORS разрешенные источники: {cors_origins}")
+
+    response = await call_next(request)
+
+    if request.method == "OPTIONS":
+        logger.info(f"CORS Preflight ответ: {response.status_code}")
+        logger.info(
+            f"CORS заголовки ответа: Access-Control-Allow-Origin={response.headers.get('Access-Control-Allow-Origin')}")
+
+    return response
+
+
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Dict[str, Any]:
     """
     Зависимость для получения текущего пользователя из JWT-токена
