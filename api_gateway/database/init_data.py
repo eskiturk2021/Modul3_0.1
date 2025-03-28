@@ -1,5 +1,6 @@
 # api_gateway/database/init_data.py
 import logging
+import traceback
 from sqlalchemy.exc import SQLAlchemyError
 from database.models import User
 
@@ -14,9 +15,26 @@ def initialize_default_data(db_service):
     logger.info("Проверка наличия базовых данных...")
 
     try:
+        # Проверяем соединение с базой данных
+        logger.info("Проверка соединения с базой данных перед инициализацией данных...")
+        with db_service.session_scope() as session:
+            try:
+                result = session.execute("SELECT 1").scalar()
+                if result == 1:
+                    logger.info("Соединение с базой данных успешно")
+                else:
+                    logger.warning(f"Странный результат проверки соединения: {result}")
+            except Exception as conn_e:
+                logger.error(f"Ошибка при проверке соединения: {str(conn_e)}")
+                logger.error(traceback.format_exc())
+                raise
+
         with db_service.session_scope() as session:
             # Проверяем, есть ли пользователи-администраторы
+            logger.info("Проверка наличия пользователей-администраторов...")
             admin_count = session.query(User).filter(User.role == "admin").count()
+            logger.info(f"Найдено {admin_count} администраторов")
+
             if admin_count == 0:
                 logger.info("Создание пользователя-администратора по умолчанию...")
                 # Хешированный пароль 'admin123'
@@ -28,7 +46,15 @@ def initialize_default_data(db_service):
                     role="admin"
                 )
                 session.add(admin_user)
-                logger.info("Пользователь-администратор по умолчанию создан")
+                logger.info("Пользователь-администратор по умолчанию добавлен в сессию")
+
+                # Проверка добавления перед коммитом
+                session.flush()
+                logger.info(f"Пользователь-администратор создан с ID: {admin_user.id}")
+
+            # Проверяем общее количество пользователей после инициализации
+            total_users = session.query(User).count()
+            logger.info(f"Общее количество пользователей в системе: {total_users}")
 
             # Здесь можно добавить другую инициализацию, если необходимо
             # Но без создания услуг и цен, так как они должны загружаться пользователем
@@ -37,8 +63,10 @@ def initialize_default_data(db_service):
         return True
 
     except SQLAlchemyError as e:
-        logger.error(f"Ошибка инициализации базовых данных: {str(e)}")
+        logger.error(f"Ошибка SQLAlchemy при инициализации базовых данных: {str(e)}")
+        logger.error(traceback.format_exc())
         return False
     except Exception as e:
         logger.error(f"Непредвиденная ошибка при инициализации данных: {str(e)}")
+        logger.error(traceback.format_exc())
         return False
