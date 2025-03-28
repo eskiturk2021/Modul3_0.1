@@ -84,23 +84,6 @@ async def log_requests(request: Request, call_next):
 
 
 # Настройка CORS с обработанным списком источников
-# Подготовка списка разрешенных источников
-cors_origins = ["*"] if settings.CORS_ORIGINS == "*" else settings.CORS_ORIGINS.split(",")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Добавляем middleware для ограничения количества запросов (защита от DDoS)
-app.add_middleware(
-    RateLimitMiddleware,
-    limit_per_minute=settings.RATE_LIMIT_PER_MINUTE
-)
-
 # Добавляем middleware для аутентификации
 app.add_middleware(
     AuthMiddleware,
@@ -114,6 +97,24 @@ app.add_middleware(
         "/openapi.json",
         "/test/config"
     ]
+)
+
+# Добавляем middleware для ограничения количества запросов (защита от DDoS)
+app.add_middleware(
+    RateLimitMiddleware,
+    limit_per_minute=settings.RATE_LIMIT_PER_MINUTE
+)
+
+# Настройка CORS с обработанным списком источников
+# Подготовка списка разрешенных источников
+cors_origins = ["*"] if settings.CORS_ORIGINS == "*" else settings.CORS_ORIGINS.split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Эндпоинт для тестирования конфигурации (доступен только в режиме отладки)
