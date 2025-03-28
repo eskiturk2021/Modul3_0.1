@@ -84,13 +84,7 @@ class S3Service:
         except ClientError as e:
             error_code = e.response.get('Error', {}).get('Code', 'Unknown')
             error_message = e.response.get('Error', {}).get('Message', str(e))
-            logger.error(f"Ошибка AWS при создании presigned URL: {error_code} - {error_message}")
-            logger.error(traceback.format_exc())
-            raise
-        except Exception as e:
-            logger.error(f"Непредвиденная ошибка при создании presigned URL: {str(e)}")
-            logger.error(traceback.format_exc())
-            raise.error(f"Ошибка AWS при загрузке файла: {error_code} - {error_message}")
+            logger.error(f"Ошибка AWS при загрузке файла: {error_code} - {error_message}")
             logger.error(traceback.format_exc())
             raise
         except Exception as e:
@@ -178,4 +172,10 @@ class S3Service:
         except ClientError as e:
             error_code = e.response.get('Error', {}).get('Code', 'Unknown')
             error_message = e.response.get('Error', {}).get('Message', str(e))
-            logger
+            logger.error(f"Ошибка AWS при создании presigned URL: {error_code} - {error_message}")
+            logger.error(traceback.format_exc())
+            raise
+        except Exception as e:
+            logger.error(f"Непредвиденная ошибка при создании presigned URL: {str(e)}")
+            logger.error(traceback.format_exc())
+            raise

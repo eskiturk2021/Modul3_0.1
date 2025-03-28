@@ -2,6 +2,7 @@
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy import text
 from contextlib import contextmanager
 import logging
 import traceback
@@ -39,11 +40,12 @@ class DatabaseService:
             # Проверяем соединение сразу после создания
             try:
                 with self.session_scope() as session:
-                    result = session.execute("SELECT 1").scalar()
+                    # Используем text() для текстовых SQL-запросов
+                    result = session.execute(text("SELECT 1")).scalar()
                     if result == 1:
                         logger.info("Тестовое соединение с базой данных успешно")
                     else:
-                        logger.warning("Странный результат тестового соединения с базой данных")
+                        logger.warning(f"Странный результат тестового соединения с базой данных: {result}")
             except Exception as test_e:
                 logger.warning(f"Тестовое соединение с базой данных не удалось: {str(test_e)}")
 

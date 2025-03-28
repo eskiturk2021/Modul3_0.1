@@ -3,6 +3,7 @@ import os
 import sys
 import logging
 import traceback
+from sqlalchemy import text
 from database.postgresql import DatabaseService
 from storage.s3_client import S3Service
 from config import settings
@@ -31,7 +32,8 @@ def check_database():
 
         with db_service.session_scope() as session:
             logger.info("Сессия открыта успешно, выполнение запроса SELECT 1")
-            result = session.execute("SELECT 1").scalar()
+            # Используем text() для текстовых SQL-запросов
+            result = session.execute(text("SELECT 1")).scalar()
 
             if result == 1:
                 logger.info("Соединение с базой данных установлено успешно")

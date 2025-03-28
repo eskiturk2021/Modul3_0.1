@@ -2,6 +2,7 @@
 import logging
 import traceback
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import text
 from database.models import User
 
 logger = logging.getLogger(__name__)
@@ -19,7 +20,8 @@ def initialize_default_data(db_service):
         logger.info("Проверка соединения с базой данных перед инициализацией данных...")
         with db_service.session_scope() as session:
             try:
-                result = session.execute("SELECT 1").scalar()
+                # Используем text() для текстовых SQL-запросов
+                result = session.execute(text("SELECT 1")).scalar()
                 if result == 1:
                     logger.info("Соединение с базой данных успешно")
                 else:
