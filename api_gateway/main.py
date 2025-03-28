@@ -8,6 +8,7 @@ import traceback
 from typing import List
 from contextlib import asynccontextmanager
 from services.websocket_service import websocket_service
+from sqlalchemy import text
 
 # Настройка логирования
 logging_level = getattr(logging, os.getenv("LOG_LEVEL", "INFO"))
@@ -49,7 +50,7 @@ async def lifespan(app: FastAPI):
     try:
         logger.info("Проверка соединения с базой данных...")
         with db_service.session_scope() as session:
-            result = session.execute("SELECT 1").scalar()
+            result = session.execute(text("SELECT 1")).scalar()
             if result == 1:
                 logger.info("Соединение с базой данных установлено успешно")
             else:
@@ -230,7 +231,7 @@ async def health_check():
         # Проверяем соединение с базой данных
         logger.debug("Выполнение проверки соединения с БД в /health")
         with db_service.session_scope() as session:
-            result = session.execute("SELECT 1").scalar()
+            result = session.execute(text("SELECT 1")).scalar()
             db_status = "connected" if result == 1 else "error"
             logger.debug(f"Результат проверки БД: {db_status}")
     except Exception as e:
