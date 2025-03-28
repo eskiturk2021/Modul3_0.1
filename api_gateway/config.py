@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     S3_BASE_PATH: str = os.getenv("S3_BASE_PATH", "user_data/")
 
     # CORS настройки - в продакшене указываем только нужные домены
-    CORS_ORIGINS: list = ["*"]
+    CORS_ORIGINS: list = os.getenv("CORS_ORIGINS", "*").split(",")
 
     # Настройки приложения
     APP_NAME: str = "Customer Management API"
