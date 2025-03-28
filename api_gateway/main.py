@@ -198,16 +198,15 @@ except Exception as e:
 # Настройка CORS с обработанным списком источников
 # Подготовка списка разрешенных источников
 # Исправьте этот код в main.py
-cors_origins = ["https://modul4-production.up.railway.app"]
-logger.info(f"Настройка CORS. Разрешенные источники: {cors_origins}")
 
+cors_origins = ["https://modul4-production.up.railway.app"]
 try:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cors_origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-        allow_headers=["X-API-Key", "Authorization", "Content-Type", "Accept"],
+        allow_headers=["*"],  # Разрешить все заголовки
     )
     logger.info("CORS middleware настроен успешно")
 except Exception as e:
