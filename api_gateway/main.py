@@ -176,8 +176,7 @@ except Exception as e:
 # Настройка CORS с обработанным списком источников
 # Подготовка списка разрешенных источников
 # Исправьте этот код в main.py
-cors_origins = ["*"] if settings.CORS_ORIGINS == "*" else [origin.strip() for origin in settings.CORS_ORIGINS.split(",")]
-logger.info(f"Настройка CORS. Разрешенные источники: {cors_origins}")
+cors_origins = ["https://modul4-production.up.railway.app"]
 
 try:
     app.add_middleware(
