@@ -1,5 +1,5 @@
 # api_gateway/main.py с добавленным логированием
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 import time
@@ -101,6 +101,27 @@ app = FastAPI(
     openapi_url="/openapi.json" if settings.DEBUG else None
 )
 
+
+# Middleware для обработки OPTIONS запросов и добавления CORS заголовков
+@app.middleware("http")
+async def handle_options(request: Request, call_next):
+    if request.method == "OPTIONS":
+        response = Response()
+        response.headers["Access-Control-Allow-Origin"] = "https://modul4-production.up.railway.app"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "X-API-Key, Authorization, Content-Type, Accept, Origin"
+        return response
+
+    response = await call_next(request)
+
+    # Добавляем CORS заголовки к любому ответу
+    response.headers["Access-Control-Allow-Origin"] = "https://modul4-production.up.railway.app"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+
+    return response
+
+
 @app.middleware("http")
 async def log_cors_details(request: Request, call_next):
     if request.method == "OPTIONS":
@@ -115,6 +136,7 @@ async def log_cors_details(request: Request, call_next):
             f"CORS заголовки ответа: Access-Control-Allow-Origin={response.headers.get('Access-Control-Allow-Origin')}")
 
     return response
+
 
 # Middleware для логирования запросов с фильтрацией "шумных" запросов
 @app.middleware("http")
@@ -176,13 +198,8 @@ except Exception as e:
 # Настройка CORS с обработанным списком источников
 # Подготовка списка разрешенных источников
 # Исправьте этот код в main.py
-if settings.CORS_ORIGINS == "*":
-    cors_origins = ["*"]
-else:
-    cors_origins = [origin.strip() for origin in settings.CORS_ORIGINS.split(",")]
-
-# Если мы хотим использовать только один конкретный домен
 cors_origins = ["https://modul4-production.up.railway.app"]
+logger.info(f"Настройка CORS. Разрешенные источники: {cors_origins}")
 
 try:
     app.add_middleware(
