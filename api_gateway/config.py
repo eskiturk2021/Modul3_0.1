@@ -32,7 +32,7 @@ class Settings(BaseSettings):
 
     # CORS настройки - в продакшене указываем только нужные домены
     CORS_ORIGINS: list = [origin.strip() for origin in
-                          os.getenv("CORS_ORIGINS", "https://modul4-production.up.railway.app").split(",")]
+                          os.getenv("CORS_ORIGINS", "http://modul4-production.up.railway.app").split(",")]
 
     # Настройки приложения
     APP_NAME: str = "Customer Management API"
