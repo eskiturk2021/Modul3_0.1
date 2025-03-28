@@ -176,6 +176,12 @@ except Exception as e:
 # Настройка CORS с обработанным списком источников
 # Подготовка списка разрешенных источников
 # Исправьте этот код в main.py
+if settings.CORS_ORIGINS == "*":
+    cors_origins = ["*"]
+else:
+    cors_origins = [origin.strip() for origin in settings.CORS_ORIGINS.split(",")]
+
+# Если мы хотим использовать только один конкретный домен
 cors_origins = ["https://modul4-production.up.railway.app"]
 
 try:
