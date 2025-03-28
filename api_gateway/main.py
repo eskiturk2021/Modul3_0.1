@@ -175,6 +175,7 @@ except Exception as e:
 
 # Настройка CORS с обработанным списком источников
 # Подготовка списка разрешенных источников
+# Исправьте этот код в main.py
 cors_origins = ["*"] if settings.CORS_ORIGINS == "*" else [origin.strip() for origin in settings.CORS_ORIGINS.split(",")]
 logger.info(f"Настройка CORS. Разрешенные источники: {cors_origins}")
 
@@ -183,8 +184,8 @@ try:
         CORSMiddleware,
         allow_origins=cors_origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+        allow_headers=["X-API-Key", "Authorization", "Content-Type", "Accept"],
     )
     logger.info("CORS middleware настроен успешно")
 except Exception as e:
