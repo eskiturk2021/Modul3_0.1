@@ -1,4 +1,4 @@
-# api_gateway/main.py с добавленным логированием
+# api_gateway/main.py с добавленными настройками CORS
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 import logging
@@ -9,6 +9,9 @@ from typing import List
 from contextlib import asynccontextmanager
 from services.websocket_service import websocket_service
 from sqlalchemy import text
+
+# Импорт нового CORS middleware
+from middleware.cors import CustomCORSMiddleware
 
 # Настройка логирования
 logging_level = getattr(logging, os.getenv("LOG_LEVEL", "INFO"))
@@ -34,6 +37,20 @@ from middleware.rate_limit import RateLimitMiddleware
 from database.postgresql import Base, db_service
 from database.models import User, Customer, Appointment, Service, Activity, Document, Conversation, AvailableSlot
 from database.init_data import initialize_default_data
+
+# Определение разрешенных источников для CORS
+ALLOWED_ORIGINS = [
+    "https://modul4-production.up.railway.app",
+    # Добавьте другие домены, если необходимо
+    "http://localhost:3000",  # Для локальной разработки
+]
+
+# Пытаемся получить список доменов из конфигурации
+if hasattr(settings, 'CORS_ALLOWED_ORIGINS') and settings.CORS_ALLOWED_ORIGINS:
+    ALLOWED_ORIGINS = settings.CORS_ALLOWED_ORIGINS
+    logger.info(f"Используются источники CORS из конфигурации: {ALLOWED_ORIGINS}")
+else:
+    logger.info(f"Используются источники CORS по умолчанию: {ALLOWED_ORIGINS}")
 
 
 @asynccontextmanager
@@ -101,7 +118,13 @@ app = FastAPI(
     openapi_url="/openapi.json" if settings.DEBUG else None
 )
 
+# Добавление нового CORS middleware (рекомендуемое для использования)
+app.add_middleware(
+    CustomCORSMiddleware,
+    allowed_origins=ALLOWED_ORIGINS
+)
 
+# Оставляем оригинальные middleware закомментированными для возможности возврата к ним
 # Новый middleware для отладки CORS
 @app.middleware("http")
 async def cors_debug_middleware(request: Request, call_next):
@@ -241,14 +264,15 @@ cors_origins = ["https://modul4-production.up.railway.app"]
 logger.info(f"Настройка CORS. Разрешенные источники: {cors_origins}")
 
 try:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=cors_origins,
-        allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-        allow_headers=["X-API-Key", "Authorization", "Content-Type", "Accept"],
-    )
-    logger.info("CORS middleware настроен успешно")
+    # Оставляем оригинальную настройку CORS, но закомментируем ее, так как используем новый middleware
+    # app.add_middleware(
+    #     CORSMiddleware,
+    #     allow_origins=cors_origins,
+    #     allow_credentials=True,
+    #     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    #     allow_headers=["X-API-Key", "Authorization", "Content-Type", "Accept"],
+    # )
+    logger.info("CORS middleware настроен успешно через CustomCORSMiddleware")
 except Exception as e:
     logger.error(f"Ошибка при настройке CORS middleware: {str(e)}")
     logger.error(traceback.format_exc())
@@ -268,7 +292,7 @@ async def test_config():
         "API_KEY": "***" if settings.API_KEY else "Not set",
         "PORT": settings.PORT,
         "ENV_PORT": os.getenv("PORT", "Not set"),
-        "CORS_ORIGINS": settings.CORS_ORIGINS,
+        "CORS_ORIGINS": ALLOWED_ORIGINS,  # Обновлено на новый список источников
         "JWT_SECRET_KEY": "***" if settings.JWT_SECRET_KEY else "Not set"
     }
 

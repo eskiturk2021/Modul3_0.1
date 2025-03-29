@@ -96,6 +96,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
             logger.debug(f"Пропуск проверки для OPTIONS запроса: {request_path}")
             return await call_next(request)
 
+        # Для публичных путей достаточно проверки API-ключа
+        if any(request_path.startswith(path) for path in self.public_paths):
+            logger.debug(f"Публичный путь {request_path}: пропуск проверки JWT")
+            return await call_next(request)
+
         # Проверяем наличие API-ключа во всех запросах
         api_key = request.headers.get("X-API-Key")
         logger.debug(f"API-ключ {'предоставлен' if api_key else 'не предоставлен'} для {request_path}")
@@ -106,11 +111,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 status_code=403,
                 content="Unauthorized: Invalid API key"
             )
-
-        # Для публичных путей достаточно проверки API-ключа
-        if any(request_path.startswith(path) for path in self.public_paths):
-            logger.debug(f"Публичный путь {request_path}: пропуск проверки JWT")
-            return await call_next(request)
 
         # Для защищенных путей проверяем также JWT-токен
         auth_header = request.headers.get("Authorization")

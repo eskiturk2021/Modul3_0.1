@@ -2,6 +2,7 @@
 import os
 from pydantic_settings import BaseSettings
 import secrets
+from typing import List
 
 
 class Settings(BaseSettings):
@@ -32,6 +33,9 @@ class Settings(BaseSettings):
 
     # CORS настройки - в продакшене указываем только нужные домены
     CORS_ORIGINS: str = "*"
+    # CORS настройки - список разрешенных доменов
+    CORS_ALLOWED_ORIGINS: List[str] = []
+
     # Настройки приложения
     APP_NAME: str = "Customer Management API"
     APP_VERSION: str = "1.0.0"
@@ -53,6 +57,17 @@ class Settings(BaseSettings):
     # Настройки логирования
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FORMAT: str = os.getenv("LOG_FORMAT", "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Обработка списка CORS доменов из строки
+        cors_origins = os.getenv("CORS_ALLOWED_ORIGINS", "https://modul4-production.up.railway.app")
+        if cors_origins:
+            self.CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins.split(",")]
+
+        # Если список пуст, добавим домен фронтенда по умолчанию
+        if not self.CORS_ALLOWED_ORIGINS:
+            self.CORS_ALLOWED_ORIGINS = ["https://modul4-production.up.railway.app"]
 
     class Config:
         env_file = ".env"
