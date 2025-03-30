@@ -23,6 +23,7 @@ from services.activity_service import ActivityService  # Добавить это
 from services.appointment_service import AppointmentService  # Добавить этот импорт
 from services.settings_service import SettingsService  # Добавить этот импорт
 from services.auth_service import AuthService  # Добавить этот импорт
+from services.s3_sync_service import S3SyncService  # Новый импорт
 
 from config import settings
 
@@ -108,4 +109,9 @@ def get_auth_service(
 ) -> AuthService:
     return AuthService(user_repo)
 
+# Новая зависимость для S3SyncService
+def get_s3_sync_service(
+    user_submission_repo: UserSubmissionRepository = Depends(get_user_submission_repo)
+) -> S3SyncService:
+    return S3SyncService(s3_service, user_submission_repo)
 
