@@ -73,73 +73,48 @@ class SettingsService:
     def update_system_prompt(self, content: str) -> bool:
         """Обновляет системный промпт"""
         try:
-            # Логирование начала процесса обновления
-            print(f"[DEBUG] Начало обновления системного промпта. Длина контента: {len(content)}")
-            print(f"[DEBUG] Путь к файлу системного промпта: {self.system_prompt_key}")
-            print(f"[DEBUG] Путь к файлу системных настроек: {self.system_settings_key}")
-
             # Сохраняем промпт в текстовом формате по новому пути
             success_txt = False
             try:
-                print(f"[DEBUG] Попытка загрузки текстового файла в S3")
+                # Преобразуем строку в BytesIO объект, чтобы он имел метод read()
+                import io
+                content_bytes = io.BytesIO(content.encode('utf-8'))
+
                 self.s3_service.upload_file(
-                    content.encode('utf-8'),
+                    content_bytes,  # Теперь передаем файлоподобный объект
                     self.system_prompt_key,
                     "text/plain"
                 )
                 success_txt = True
-                print(f"[DEBUG] Текстовый файл успешно загружен в S3 по пути {self.system_prompt_key}")
             except Exception as txt_e:
-                print(f"[DEBUG] Детали ошибки при загрузке текстового файла:")
-                print(f"[DEBUG] Тип ошибки: {type(txt_e).__name__}")
-                print(f"[DEBUG] Сообщение: {str(txt_e)}")
-                print(f"[DEBUG] Атрибуты ошибки: {dir(txt_e)}")
-                if hasattr(txt_e, 'response'):
-                    print(f"[DEBUG] Ответ: {txt_e.response}")
+                print(f"Error updating system prompt as TXT: {str(txt_e)}")
 
             # Также обновляем JSON-версию для обратной совместимости
             success_json = False
             try:
                 # Получаем текущие настройки
-                print(f"[DEBUG] Попытка получения текущих системных настроек")
                 settings = self.get_system_settings()
-                print(f"[DEBUG] Текущие системные настройки получены: {settings}")
 
                 # Обновляем системный промпт
                 settings["system_prompt"] = content
-                print(f"[DEBUG] Промпт обновлен в объекте настроек")
 
-                # Сохраняем обновленные настройки
+                # Сохраняем обновленные настройки, также используя BytesIO
                 settings_json = json.dumps(settings, indent=2)
-                print(f"[DEBUG] Преобразование настроек в JSON выполнено, длина JSON: {len(settings_json)}")
+                json_bytes = io.BytesIO(settings_json.encode('utf-8'))
 
-                print(f"[DEBUG] Попытка загрузки JSON-файла в S3")
                 self.s3_service.upload_file(
-                    settings_json.encode('utf-8'),
+                    json_bytes,  # Файлоподобный объект
                     self.system_settings_key,
                     "application/json"
                 )
                 success_json = True
-                print(f"[DEBUG] JSON-файл успешно загружен в S3 по пути {self.system_settings_key}")
             except Exception as json_e:
-                print(f"[DEBUG] Детали ошибки при загрузке JSON-файла:")
-                print(f"[DEBUG] Тип ошибки: {type(json_e).__name__}")
-                print(f"[DEBUG] Сообщение: {str(json_e)}")
-                print(f"[DEBUG] Атрибуты ошибки: {dir(json_e)}")
-                if hasattr(json_e, 'response'):
-                    print(f"[DEBUG] Ответ: {json_e.response}")
+                print(f"Error updating system prompt as JSON: {str(json_e)}")
 
             # Возвращаем успех, если хотя бы один формат был обновлен
-            result = success_txt or success_json
-            print(f"[DEBUG] Результат обновления промпта: {result}")
-            return result
+            return success_txt or success_json
         except Exception as e:
-            print(f"[DEBUG] Общая ошибка в update_system_prompt:")
-            print(f"[DEBUG] Тип ошибки: {type(e).__name__}")
-            print(f"[DEBUG] Сообщение: {str(e)}")
-            print(f"[DEBUG] Атрибуты ошибки: {dir(e)}")
-            if hasattr(e, 'response'):
-                print(f"[DEBUG] Ответ: {e.response}")
+            print(f"Error in update_system_prompt: {str(e)}")
             return False
 
     def get_services(self) -> List[Dict[str, Any]]:
