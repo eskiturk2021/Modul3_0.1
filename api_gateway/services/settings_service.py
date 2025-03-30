@@ -12,31 +12,52 @@ class SettingsService:
     def __init__(self, service_repo: ServiceRepository, s3_service: S3Service):
         self.service_repo = service_repo
         self.s3_service = s3_service
+        # Оригинальный путь к настройкам (сохраняем для обратной совместимости)
         self.system_settings_key = "system_settings/config.json"
+        # Новый путь к файлу системного промпта в S3
+        self.system_prompt_key = "user_data/9ba1beaf-09e6-4c72-b4cb-dae476404178/assistant_responses/system_prompt.txt"
 
     def get_system_settings(self) -> Dict[str, Any]:
         """Получает системные настройки"""
         try:
             with self.service_repo.session_scope() as session:
-                # Попытка загрузить системные настройки из S3
+                # Сначала попытка загрузить системный промпт из текстового файла
                 try:
-                    file_data = self.s3_service.get_file(self.system_settings_key)
-                    settings_json = file_data['body'].read().decode('utf-8')
-                    settings = json.loads(settings_json)
-                except Exception as e:
-                    # Если файл не найден или произошла ошибка, возвращаем настройки по умолчанию
+                    file_data = self.s3_service.get_file(self.system_prompt_key)
+                    system_prompt = file_data['body'].read().decode('utf-8')
+
+                    # Создаем структуру настроек с полученным промптом
                     settings = {
-                        "system_prompt": "You are a helpful assistant that provides information about automotive services.",
+                        "system_prompt": system_prompt,
                         "working_hours": {
                             "start": 8,
                             "end": 18,
                             "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
                         },
-                        "appointment_duration": 30,  # в минутах
+                        "appointment_duration": 30,
                         "notification_enabled": True
                     }
-
-                return settings
+                    return settings
+                except Exception as e:
+                    # Если текстовый файл не найден, пытаемся загрузить из JSON
+                    try:
+                        file_data = self.s3_service.get_file(self.system_settings_key)
+                        settings_json = file_data['body'].read().decode('utf-8')
+                        settings = json.loads(settings_json)
+                        return settings
+                    except Exception as json_e:
+                        # Если JSON не найден или произошла ошибка, возвращаем настройки по умолчанию
+                        settings = {
+                            "system_prompt": "You are a helpful assistant that provides information about automotive services.",
+                            "working_hours": {
+                                "start": 8,
+                                "end": 18,
+                                "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+                            },
+                            "appointment_duration": 30,  # в минутах
+                            "notification_enabled": True
+                        }
+                        return settings
         except Exception as e:
             # В случае ошибки возвращаем базовые настройки
             return {
@@ -53,23 +74,42 @@ class SettingsService:
     def update_system_prompt(self, content: str) -> bool:
         """Обновляет системный промпт"""
         try:
-            # Получаем текущие настройки
-            settings = self.get_system_settings()
+            # Сохраняем промпт в текстовом формате по новому пути
+            success_txt = False
+            try:
+                self.s3_service.upload_file(
+                    content.encode('utf-8'),
+                    self.system_prompt_key,
+                    "text/plain"
+                )
+                success_txt = True
+            except Exception as txt_e:
+                print(f"Error updating system prompt as TXT: {str(txt_e)}")
 
-            # Обновляем системный промпт
-            settings["system_prompt"] = content
+            # Также обновляем JSON-версию для обратной совместимости
+            success_json = False
+            try:
+                # Получаем текущие настройки
+                settings = self.get_system_settings()
 
-            # Сохраняем обновленные настройки
-            settings_json = json.dumps(settings, indent=2)
-            self.s3_service.upload_file(
-                settings_json.encode('utf-8'),
-                self.system_settings_key,
-                "application/json"
-            )
+                # Обновляем системный промпт
+                settings["system_prompt"] = content
 
-            return True
+                # Сохраняем обновленные настройки
+                settings_json = json.dumps(settings, indent=2)
+                self.s3_service.upload_file(
+                    settings_json.encode('utf-8'),
+                    self.system_settings_key,
+                    "application/json"
+                )
+                success_json = True
+            except Exception as json_e:
+                print(f"Error updating system prompt as JSON: {str(json_e)}")
+
+            # Возвращаем успех, если хотя бы один формат был обновлен
+            return success_txt or success_json
         except Exception as e:
-            print(f"Error updating system prompt: {str(e)}")
+            print(f"Error in update_system_prompt: {str(e)}")
             return False
 
     def get_services(self) -> List[Dict[str, Any]]:

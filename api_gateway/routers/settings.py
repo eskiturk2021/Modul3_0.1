@@ -42,27 +42,31 @@ async def get_system_settings(
         raise HTTPException(status_code=500, detail=f"Ошибка при получении настроек: {str(e)}")
 
 # Эндпоинт для обновления системного промпта
-@router.put("/settings/system/prompt", response_model=Dict[str, Any])
-async def update_system_prompt(
-    content: str = Body(..., embed=True),
-    settings_service: SettingsService = Depends(get_settings_service)
+# Дополнение к файлу routers/settings.py
+@router.put("/system/prompt", response_model=Dict[str, Any])
+async def update_system_prompt_alternative(
+        content: Dict[str, str] = Body(...),
+        settings_service: SettingsService = Depends(get_settings_service)
 ):
     """
-    Обновление системного промпта
+    Альтернативный эндпоинт для обновления системного промпта
     """
     try:
-        success = settings_service.update_system_prompt(content)
+        prompt_content = content.get("content", "")
+        if not prompt_content:
+            raise HTTPException(status_code=400, detail="Content is required")
+
+        success = settings_service.update_system_prompt(prompt_content)
         if not success:
-            raise HTTPException(status_code=500, detail="Не удалось обновить системный промпт")
+            raise HTTPException(status_code=500, detail="Failed to update system prompt")
         return {
             "status": "success",
-            "message": "Системный промпт успешно обновлен"
+            "message": "System prompt updated successfully"
         }
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка при обновлении системного промпта: {str(e)}")
-
+        raise HTTPException(status_code=500, detail=f"Error updating system prompt: {str(e)}")
 # Эндпоинт для получения сервисов
 @router.get("/settings/services", response_model=Dict[str, Any])
 async def get_services(
