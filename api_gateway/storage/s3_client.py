@@ -5,6 +5,7 @@ import traceback
 from botocore.exceptions import ClientError, BotoCoreError, NoCredentialsError
 from typing import Dict, List, Any, Optional, BinaryIO
 import logging
+import traceback
 
 logger = logging.getLogger(__name__)
 

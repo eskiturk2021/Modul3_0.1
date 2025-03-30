@@ -277,6 +277,32 @@ except Exception as e:
     logger.error(f"Ошибка при настройке CORS middleware: {str(e)}")
     logger.error(traceback.format_exc())
 
+# Добавляем middleware для логирования PUT-запросов системного промпта
+@app.middleware("http")
+async def log_request_path(request: Request, call_next):
+    """Логирует путь запроса для диагностики проблем с маршрутизацией"""
+    method = request.method
+    path = request.url.path
+
+    if "prompt" in path and method == "PUT":
+        print(f"[DEBUG] Обнаружен PUT-запрос для обновления промпта: {path}")
+        print(f"[DEBUG] Полный URL: {request.url}")
+        print(f"[DEBUG] Заголовки: {dict(request.headers)}")
+        body = await request.body()
+        try:
+            body_text = body.decode('utf-8')
+            print(f"[DEBUG] Тело запроса (первые 100 символов): {body_text[:100]}")
+        except:
+            print(f"[DEBUG] Не удалось декодировать тело запроса, длина в байтах: {len(body)}")
+
+    response = await call_next(request)
+
+    if "prompt" in path and method == "PUT":
+        print(f"[DEBUG] Ответ на PUT-запрос: статус={response.status_code}")
+        print(f"[DEBUG] Заголовки ответа: {dict(response.headers)}")
+
+    return response
+
 
 # Эндпоинт для тестирования конфигурации (доступен только в режиме отладки)
 @app.get("/test/config")

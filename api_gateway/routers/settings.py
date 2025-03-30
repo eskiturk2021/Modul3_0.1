@@ -7,6 +7,8 @@ from services.settings_service import SettingsService
 from dependencies import get_settings_service
 from datetime import datetime
 
+import traceback
+
 router = APIRouter()
 
 class ServiceBase(BaseModel):
@@ -52,20 +54,37 @@ async def update_system_prompt_alternative(
     Альтернативный эндпоинт для обновления системного промпта
     """
     try:
+        print(f"[DEBUG] Получен запрос на обновление системного промпта")
+        print(f"[DEBUG] Тело запроса: {content}")
+
         prompt_content = content.get("content", "")
+        print(f"[DEBUG] Извлеченный контент промпта, длина: {len(prompt_content)}")
+
         if not prompt_content:
+            print(f"[DEBUG] Ошибка: контент пуст")
             raise HTTPException(status_code=400, detail="Content is required")
 
+        print(f"[DEBUG] Вызов settings_service.update_system_prompt()")
         success = settings_service.update_system_prompt(prompt_content)
+        print(f"[DEBUG] Результат вызова update_system_prompt: {success}")
+
         if not success:
+            print(f"[DEBUG] Ошибка: не удалось обновить системный промпт")
             raise HTTPException(status_code=500, detail="Failed to update system prompt")
+
+        print(f"[DEBUG] Успешное обновление системного промпта")
         return {
             "status": "success",
             "message": "System prompt updated successfully"
         }
-    except HTTPException:
+    except HTTPException as e:
+        print(f"[DEBUG] HTTPException: {e.status_code} - {e.detail}")
         raise
     except Exception as e:
+        print(f"[DEBUG] Необработанное исключение в обработчике update_system_prompt_alternative:")
+        print(f"[DEBUG] Тип: {type(e).__name__}")
+        print(f"[DEBUG] Сообщение: {str(e)}")
+        print(f"[DEBUG] Трассировка: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error updating system prompt: {str(e)}")
 # Эндпоинт для получения сервисов
 @router.get("/settings/services", response_model=Dict[str, Any])
