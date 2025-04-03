@@ -53,15 +53,15 @@ class CustomerService:
 
     def get_customers(self, search: Optional[str] = None, limit: int = 20, offset: int = 0) -> Dict:
         """Получает список клиентов с фильтрацией"""
-        with self.customer_repo.session_scope() as session:
-            customer_repo = CustomerRepository(session)
+        try:
+            customer_repo = self.customer_repo
 
             if search:
                 customers = customer_repo.search_customers(search, limit)
                 total = len(customers)  # В реальном приложении нужно отдельно считать общее количество
             else:
                 customers = customer_repo.get_all(limit, offset)
-                total = session.query(self.customer_repo.model_class).count()
+                total = customer_repo.count_all()
 
             return {
                 'customers': [
@@ -80,6 +80,9 @@ class CustomerService:
                     'offset': offset
                 }
             }
+        except Exception as e:
+            print(f"Error getting customers: {str(e)}")
+            raise
 
     def create_customer(self, customer_data: Dict) -> Dict:
         """Создает нового клиента"""
