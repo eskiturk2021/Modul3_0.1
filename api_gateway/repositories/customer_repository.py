@@ -11,6 +11,16 @@ class CustomerRepository(BaseRepository[Customer]):
     def __init__(self, session: Session):
         super().__init__(Customer, session)
 
+    def count_all(self):
+        """
+        Подсчитывает общее количество клиентов в базе данных
+        """
+        try:
+            return self.session.query(Customer).count()
+        except Exception as e:
+            print(f"Error counting customers: {str(e)}")
+            raise
+
     def get_by_phone(self, phone: str) -> Optional[Customer]:
         return self.session.query(Customer).filter(Customer.phone == phone).first()
 
