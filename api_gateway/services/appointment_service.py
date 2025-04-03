@@ -18,8 +18,8 @@ class AppointmentService:
 
     def get_upcoming_appointments(self, limit: int = 10, offset: int = 0) -> List[Dict[str, Any]]:
         """Получает предстоящие записи на обслуживание"""
-        with self.appointment_repo.session_scope() as session:
-            appointment_repo = AppointmentRepository(session)
+        try:
+            appointment_repo = self.appointment_repo
 
             # Получаем записи, где дата >= сегодняшней
             appointments = appointment_repo.get_upcoming_appointments(limit, offset)
@@ -40,6 +40,9 @@ class AppointmentService:
                     "estimated_cost": float(app.estimated_cost) if app.estimated_cost else None
                 } for app in appointments
             ]
+        except Exception as e:
+            print(f"Error getting appointment: {str(e)}")
+            raise
 
     def get_appointment_by_id(self, appointment_id: str) -> Optional[Dict[str, Any]]:
         """Получает информацию о конкретной записи"""
