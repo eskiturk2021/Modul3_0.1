@@ -15,13 +15,14 @@ class DashboardService:
         self.activity_repo = activity_repo
 
     def get_dashboard_stats(self) -> Dict[str, Any]:
-        """Получает статистику для дашборда"""
-        with self.customer_repo.session_scope() as session:
-            customer_repo = CustomerRepository(session)
-            appointment_repo = AppointmentRepository(session)
+
+        try:
+            customer_repo = self.customer_repo
+            appointment_repo = self.appointment_repo
 
             # Получаем общее количество клиентов
             total_customers = customer_repo.get_total_count()
+            total_appointments = appointment_repo.count_all()
 
             # Получаем количество новых клиентов за последний месяц
             month_ago = datetime.utcnow() - timedelta(days=30)
@@ -51,6 +52,9 @@ class DashboardService:
                 "returning_customers_trend": {"direction": "same", "value": 0},
                 "scheduled_appointments_trend": {"direction": "down", "value": 5}
             }
+        except Exception as e:
+            print(f"Error getting customers: {str(e)}")
+            raise
 
     def get_recent_activity(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Получает последние активности для дашборда"""
