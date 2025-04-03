@@ -3,6 +3,8 @@ from typing import Dict, List, Any, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, and_
 from datetime import date, time
+from sqlalchemy import func
+from datetime import datetime
 
 from repositories.base_repository import BaseRepository
 from database.models import Appointment
@@ -101,3 +103,14 @@ class AppointmentRepository(BaseRepository[Appointment]):
     def complete_appointment(self, appointment_id: str) -> bool:
         """Отмечает запись как выполненную"""
         return self.update_appointment_status(appointment_id, 'completed')
+
+    def get_count_since_date(self, since_date: datetime) -> int:
+        """Подсчитывает количество записей с указанной даты"""
+        try:
+            count = self.session.query(func.count(Appointment.id)) \
+                .filter(Appointment.appointment_date >= since_date) \
+                .scalar()
+            return count or 0
+        except Exception as e:
+            print(f"Error counting appointments since {since_date}: {str(e)}")
+            return 0
