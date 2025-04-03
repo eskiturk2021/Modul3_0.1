@@ -12,6 +12,14 @@ class AppointmentRepository(BaseRepository[Appointment]):
     def __init__(self, session: Session):
         super().__init__(Appointment, session)
 
+    def count_all(self):
+
+        try:
+            return self.session.query(Appointment).count()
+        except Exception as e:
+            print(f"Error getting appointment: {str(e)}")
+            raise
+
     def get_by_appointment_id(self, appointment_id: str) -> Optional[Appointment]:
         """Получает запись по уникальному ID записи"""
         return self.session.query(Appointment).filter(Appointment.appointment_id == appointment_id).first()

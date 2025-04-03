@@ -43,8 +43,8 @@ class AppointmentService:
 
     def get_appointment_by_id(self, appointment_id: str) -> Optional[Dict[str, Any]]:
         """Получает информацию о конкретной записи"""
-        with self.appointment_repo.session_scope() as session:
-            appointment_repo = AppointmentRepository(session)
+        try:
+            appointment_repo = self.appointment_repo
 
             appointment = appointment_repo.get_by_appointment_id(appointment_id)
             if not appointment:
@@ -71,6 +71,9 @@ class AppointmentService:
                 "status": appointment.status,
                 "created_at": appointment.created_at.isoformat()
             }
+        except Exception as e:
+            print(f"Error getting appointment: {str(e)}")
+            raise
 
     def create_appointment(self, appointment_data: Dict[str, Any]) -> Dict[str, Any]:
         """Создает новую запись на обслуживание"""
