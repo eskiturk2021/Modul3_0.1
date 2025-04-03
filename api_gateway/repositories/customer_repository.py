@@ -12,6 +12,14 @@ class CustomerRepository(BaseRepository[Customer]):
         super().__init__(Customer, session)
 
     def count_all(self):
+        """Подсчет общего количества клиентов"""
+        try:
+            return self.session.query(self.model_class).count()
+        except Exception as e:
+            print(f"Error counting customers: {str(e)}")
+            raise
+
+    def count_all(self):
         """
         Подсчитывает общее количество клиентов в базе данных
         """

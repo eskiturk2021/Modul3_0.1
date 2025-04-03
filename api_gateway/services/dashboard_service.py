@@ -21,7 +21,7 @@ class DashboardService:
             appointment_repo = self.appointment_repo
 
             # Получаем общее количество клиентов
-            total_customers = customer_repo.get_total_count()
+            total_customers = customer_repo.count_all()
             total_appointments = appointment_repo.count_all()
 
             # Получаем количество новых клиентов за последний месяц
