@@ -2,6 +2,7 @@ from typing import Dict, List, Any, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, func
 from datetime import datetime, timedelta
+from database.models import Customer, Appointment
 
 from repositories.base_repository import BaseRepository
 from database.models import Customer
@@ -40,18 +41,10 @@ class CustomerRepository(BaseRepository[Customer]):
     def get_count_since(self, months_ago: int = 1) -> int:
         """
         Подсчет количества новых клиентов за указанный период
-
-        Args:
-            months_ago (int): Количество месяцев назад для подсчета (по умолчанию 1)
-
-        Returns:
-            int: Количество новых клиентов
         """
         try:
-            # Вычисляем дату месяц назад от текущей даты
             month_ago = datetime.utcnow() - timedelta(days=30 * months_ago)
 
-            # Подсчет клиентов, созданных после указанной даты
             new_customers_count = self.session.query(func.count(Customer.id)).filter(
                 Customer.created_at >= month_ago
             ).scalar()
@@ -59,4 +52,29 @@ class CustomerRepository(BaseRepository[Customer]):
             return new_customers_count
         except Exception as e:
             print(f"Error counting new customers: {str(e)}")
+            return 0
+
+    def get_count_with_visits(self, min_visits: int = 2) -> int:
+        """
+        Подсчет клиентов с определенным количеством визитов
+
+        Args:
+            min_visits (int): Минимальное количество визитов для клиента
+
+        Returns:
+            int: Количество клиентов с количеством визитов не менее min_visits
+        """
+        try:
+            # Используем подзапрос для группировки и подсчета визитов клиентов
+            repeat_customers_count = (
+                    self.session.query(func.count(func.distinct(Customer.id)))
+                    .join(Customer.appointments)  # Используем relationship для соединения таблиц
+                    .group_by(Customer.id)
+                    .having(func.count(Appointment.id) >= min_visits)
+                    .scalar() or 0
+            )
+
+            return repeat_customers_count
+        except Exception as e:
+            print(f"Error counting repeat customers: {str(e)}")
             return 0

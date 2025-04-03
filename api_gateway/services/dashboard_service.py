@@ -26,7 +26,7 @@ class DashboardService:
 
             # Получаем количество новых клиентов за последний месяц
             month_ago = datetime.utcnow() - timedelta(days=30)
-            new_customers = customer_repo.get_count_since(month_ago)
+            new_customers = customer_repo.get_count_since(1)
 
             # Получаем количество повторных клиентов
             repeat_customers = customer_repo.get_count_with_visits(min_visits=2)
